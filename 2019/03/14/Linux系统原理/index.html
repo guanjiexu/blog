@@ -106,7 +106,7 @@
 <meta property="og:site_name" content="徐冠杰的博客">
 <meta property="og:description" content="进程进程对应Linux中一个程序运行实体（不一定再运行，可以在创建状态，僵尸状态等）及其上下文环境。 Linux系统没有传统意义的线程，对应的是轻量级进程（LWP），与普通进程不同的是，共享其父进程的上下文环境。 内核把进程列表放入任务队列中(task_list)，采用双向循环链表实现，其中的节点为task_struct，在32位集器上，大概由1.7KB。 Linux使用slab分配task_st">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2019-03-14T07:12:53.408Z">
+<meta property="og:updated_time" content="2019-03-14T10:35:31.541Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux系统原理">
 <meta name="twitter:description" content="进程进程对应Linux中一个程序运行实体（不一定再运行，可以在创建状态，僵尸状态等）及其上下文环境。 Linux系统没有传统意义的线程，对应的是轻量级进程（LWP），与普通进程不同的是，共享其父进程的上下文环境。 内核把进程列表放入任务队列中(task_list)，采用双向循环链表实现，其中的节点为task_struct，在32位集器上，大概由1.7KB。 Linux使用slab分配task_st">
@@ -334,7 +334,7 @@
                 
               
 
-              <time title="Erstellt: 2019-03-14 14:03:13 / Geändert am: 15:12:53" itemprop="dateCreated datePublished" datetime="2019-03-14T14:03:13+08:00">2019-03-14</time>
+              <time title="Erstellt: 2019-03-14 14:03:13 / Geändert am: 18:35:31" itemprop="dateCreated datePublished" datetime="2019-03-14T14:03:13+08:00">2019-03-14</time>
             
 
             
@@ -418,7 +418,7 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">struct task_struact *<span class="title">kthread_create</span><span class="params">(<span class="keyword">int</span> (*threadfn)(<span class="keyword">void</span> *data), <span class="keyword">void</span> *data, <span class="keyword">const</span> <span class="keyword">char</span> namefmt[], ...)</span></span></span><br></pre></td></tr></table></figure>
 <h4 id="进程终结"><a href="#进程终结" class="headerlink" title="进程终结"></a>进程终结</h4><blockquote>
 <ol>
-<li>将flaag设置为PF_EXITING</li>
+<li>将flag设置为PF_EXITING</li>
 <li>删除内核定时器</li>
 <li>释放占用的mm_struct引用计数</li>
 <li>调用sem __exit()函数，如果排队等候IPC信号，则离开队列</li>
@@ -490,7 +490,7 @@
 <p><strong>调度策略</strong></p>
 <blockquote>
 <ol>
-<li>SCHED_NORMAL：即普通类型调度，优先级比下两种低</li>
+<li>SCHED_NORMAL：即普通类型调度，优先级比下两种低。下面两种任务执行完，才会进入SCHED_NORMAL</li>
 <li>SCHED_FIFO：实时模式，不用时间片，按先入先出原则执行</li>
 <li>SCHED_RR：实时模式，指定时间内执行不完就停止执行</li>
 </ol>
@@ -498,6 +498,177 @@
 <p><strong>抢占</strong></p>
 <p>用户抢占：内核返回用户空间时，如果设置了need_resched标记，会导致schedule()被再次调用，选择下一个合适的进程。</p>
 <p>内核抢占：2.6后实现，Unix中内核代码必须在执行完成或阻塞时让出时间片。内核抢占可以在执行中让出时间片，只要调度是安全的（没有使用锁）。</p>
+<h2 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h2><p>系统调用用于使用内核提供的应用程序接口，系统调用时处于<strong>进程上下文</strong>。</p>
+<p>系统调用好处：</p>
+<ol>
+<li>对硬件访问提供抽象</li>
+<li>保护系统的稳定和安全，为资源访问提供权限</li>
+</ol>
+<p>原理：</p>
+<ol>
+<li>将参数地址和调用号存入寄存器</li>
+<li>通过中断指令，进入内核空间</li>
+<li>执行完毕返回中断点（或进行下一步调度）</li>
+</ol>
+<p><strong>与进程空间进行交互</strong></p>
+<blockquote>
+<p>copy_to_user()：向用户空间写数据<br>copy_from_user()：从用户空间读数据</p>
+</blockquote>
+<h2 id="中断"><a href="#中断" class="headerlink" title="中断"></a>中断</h2><p>CPU执行某些指令时时间可能过长（如向硬盘写数据），可以在执行开始后，让出时间片执行其它任务，在这个任务完成后，调用预先设置的中断处理程序。这样可以避免cpu在等待I/O等慢设备操作时，处于空闲状态。</p>
+<p>实现方式：</p>
+<ol>
+<li>轮询（可编程中断）：在慢设备中设置一个标记位，CPU通过总线读取标记位，标记位改变触发中断。这种处理会受慢设备标记读取速度影响，因为要轮询，也会消耗额外的CPU时间。</li>
+<li>触发：慢设备指令执行完成后，主动触发CPU。缺点是需要慢设备提供该功能，硬件设计复杂。</li>
+</ol>
+<p>分类：</p>
+<ol>
+<li>程序中断：如算术溢出，非法指令等</li>
+<li>时钟中断：处理器计时器触发</li>
+<li>I/O中断：I/O控制器产生</li>
+<li>硬件失效中断</li>
+</ol>
+<p>优先级：</p>
+<blockquote>
+<p>中断正在执行时触发中断，一般处理是直接忽略该中断信号<br>另外可以设置优先级，优先级高的可以中断优先级低的正在执行的中断程序</p>
+</blockquote>
+<h3 id="DMA：直接内存访问"><a href="#DMA：直接内存访问" class="headerlink" title="DMA：直接内存访问"></a>DMA：直接内存访问</h3><p>访问I/O（读）的通常流程：</p>
+<ol>
+<li>CPU检测I/O缓存区是否有数据</li>
+<li>有数据则将数据复制到内存</li>
+</ol>
+<p>缺点是：</p>
+<ol>
+<li>CPU复制内存会占用CPU时间（相对较长）</li>
+<li>如果CPU长时间未处理可能会导致缓存区满，I/O数据丢失</li>
+</ol>
+<p>可以使用额外的DMA控制器，将I/O缓存区的数据复制到内存中，节省CPU消耗。</p>
+<p>复制完成，I/O设备通知CPU即可。</p>
+<h3 id="上半部和下半部"><a href="#上半部和下半部" class="headerlink" title="上半部和下半部"></a>上半部和下半部</h3><p>中断的执行时间应当比较短（影响其它中断处理），但有时候中断又需完成较多的任务。</p>
+<p>可以将中断分为上半部（处理最简单的必须任务），下半部，放入待处理队列，后续执行。</p>
+<h3 id="API"><a href="#API" class="headerlink" title="API"></a>API</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">request_irq</span><span class="params">(<span class="keyword">unsigned</span> <span class="keyword">int</span> irq,</span></span></span><br><span class="line"><span class="function"><span class="params">                <span class="keyword">irq_handler_t</span> handler,</span></span></span><br><span class="line"><span class="function"><span class="params">                <span class="keyword">unsigned</span> <span class="keyword">long</span> flags,</span></span></span><br><span class="line"><span class="function"><span class="params">                <span class="keyword">void</span> *dev)</span></span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>irq为中断号</li>
+<li>handler为中断处理程序</li>
+</ul>
+<p>flags：</p>
+<blockquote>
+<ol>
+<li>IRQF_DISABLED：如果设置，内核处理其它程序时禁止其它所有中断</li>
+<li>IRQF_SAMPLE_RANDOM：设备产生的中断对熵池（用于随机数生成）有贡献</li>
+<li>IRQF_TIMER：为系统定时器中断准备</li>
+<li>IRQF_SHARED：在多个中断处理中共享</li>
+</ol>
+</blockquote>
+<p>释放中断：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">free_irq</span><span class="params">(unsiged <span class="keyword">int</span> irq, <span class="keyword">void</span> *dev)</span></span>;</span><br></pre></td></tr></table></figure>
+<h3 id="中断上下文"><a href="#中断上下文" class="headerlink" title="中断上下文"></a>中断上下文</h3><p>中断执行时，内核处于中断上下文。</p>
+<p>中断上下文不能睡眠，并由严格时间限制。</p>
+<p>中断上下文共享中断进程的内核栈</p>
+<h3 id="下半部"><a href="#下半部" class="headerlink" title="下半部"></a>下半部</h3><p>实现下半部的方式包括：</p>
+<ol>
+<li>软中断</li>
+<li>tasklet</li>
+<li>工作队列</li>
+</ol>
+<p><strong>软中断</strong></p>
+<p>软中断是<strong>编译期</strong>分配的，由<code>softirq_action</code>表示</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">softirq_action</span> &#123;</span></span><br><span class="line">    <span class="keyword">void</span> (*action)(struct softirq_action);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 默认32</span></span><br><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">softirq_action</span> <span class="title">softirq_vec</span>[<span class="title">NR_SOFTIRQS</span>];</span></span><br></pre></td></tr></table></figure>
+<p>系统调用<code>do_softireq</code>来执行软中断中的程序。</p>
+<p>软中断保留给系统中对事件要求最严格以及最重要的下半部使用。</p>
+<p>软中断处理程序时，允许响应中断，但不能休眠。</p>
+<h3 id="tasklet"><a href="#tasklet" class="headerlink" title="tasklet"></a>tasklet</h3><p>tasklet通过软中断实现。</p>
+<p>tasklet使用链表存储<code>tasklet_struct</code>，来实现处理队列。</p>
+<p>分为高优先级和普通队列。</p>
+<p>调度步骤：</p>
+<ol>
+<li>检查tasklet的状态是否为TASKLET_STATE_SCHED，如果是，则已经被调度过，函数返回</li>
+<li>调用_tasklet_schedule()</li>
+<li>保存中断状态，禁用本地中断</li>
+<li>把需要调度的tasklet加到每个处理器一个的tasklet_vec链表或tasklet_hi_vec链表（高优先级）</li>
+<li>唤醒TASKLET_SOFTIRQ或HI_SOFTIRQ软中断，这样在下一次调用do_softirq()时就会执行该tasklet</li>
+<li>恢复状态并返回</li>
+</ol>
+<h3 id="工作队列"><a href="#工作队列" class="headerlink" title="工作队列"></a>工作队列</h3><p>工作队列的上下文是进程上下文。</p>
+<p>如果推后的任务需要休眠使用工作队列，否则使用tasklet</p>
+<p>会由一个线程执行工作队列里的内容</p>
+<ol>
+<li>如果队列时空的，则休眠</li>
+<li>不是空的，则执行</li>
+</ol>
+<h2 id="内核同步"><a href="#内核同步" class="headerlink" title="内核同步"></a>内核同步</h2><p>常见概念：</p>
+<p><strong>SMP</strong>：对称CPU处理器，即多个独立的CPU。和多核的区别是无法对缓存和异步做硬件级协调，需要操作系统完成<br><strong>多核</strong>：一个处理器，多个核心，可以并行操作</p>
+<p><strong>乱序指令</strong></p>
+<blockquote>
+<ol>
+<li>流水线计数，CPU可以将互不干扰，不影响前后多级的指令同时执行</li>
+<li>指令重排，重新排序指令，最大化流水线并行</li>
+</ol>
+</blockquote>
+<p>乱序指令重排不会影响单个CPU的指令执行，但可能影响SMP或多核应用程序执行。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Thread 1</span></span><br><span class="line">a = <span class="number">1</span>;</span><br><span class="line">b = <span class="number">2</span>;</span><br><span class="line">c = a;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可能执行顺序是</span></span><br><span class="line"><span class="comment">// b = 2;</span></span><br><span class="line"><span class="comment">// a = 1;</span></span><br><span class="line"><span class="comment">// c = a;   // 读一定发生再写之后</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Thread 2</span></span><br><span class="line"><span class="keyword">if</span> (b == <span class="number">2</span>) &#123;</span><br><span class="line">    <span class="comment">// 逻辑上可能认为a =1，执行一些操作，但实时可能不是</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>原子操作</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Thread1</span></span><br><span class="line">a++</span><br><span class="line"></span><br><span class="line"><span class="comment">// Thread2</span></span><br><span class="line">a++</span><br></pre></td></tr></table></figure>
+<p>期望是a=a+2</p>
+<p>但实际：</p>
+<blockquote>
+<ol>
+<li>CPU1将a的值存入寄存器</li>
+<li>CPU2将a的值存入寄存器</li>
+<li>CPU1执行加操作，此时a=a+1</li>
+<li>CPU2执行加操作，此时a=a+1<br>最终a只加了一次，这是因为该操作不是原子操作，出现了脏读</li>
+</ol>
+</blockquote>
+<p><strong>使用加锁，或CAS指令可以解决</strong></p>
+<p><strong>局部性原理</strong></p>
+<ol>
+<li>空间局部：如果一个变量被访问，那么他临近的变量更可能被访问</li>
+<li>时间局部：如果一个变量被访问，那么再次访问该变量的机会会增大</li>
+<li>顺序局部：指令倾向于顺序执行</li>
+</ol>
+<p><strong>CPU缓存</strong></p>
+<p>CPU缓存距离CPU更近，不需要通过总线访问。CPU的速度比内存快很多。</p>
+<p>缓存的执行流程：</p>
+<p>读：</p>
+<blockquote>
+<ol>
+<li>查看缓存是否在CPU缓存中（内存通过hash映射到缓存中），如果在，则返回</li>
+<li>不在将内存加载到<strong>缓存行</strong>（缓存单元，缓存及邻近字），并返回</li>
+</ol>
+</blockquote>
+<p>写（什么时候写入内存由内存策略决定）：</p>
+<blockquote>
+<ol>
+<li>查看该CPU缓存中是否有数据，如果有且不是送入字节的内存区域，采用LRU算法决定是否置换</li>
+<li>如果失败，写入内存</li>
+</ol>
+</blockquote>
+<p>假设缓存命中率是95%，访问内存100us，访问缓存5us，那么不使用缓存100us，使用缓存(5us+0.25us)+4.75=10us，其中0.25us是访问内存时，也要先访问缓存。</p>
+<p>可以设计多级缓存，一般为两级，一级比另一级大</p>
+<p><strong>CPU缓存在不同的核之间是不共享的，多核执行可能会出现不一致的情况，这时候需要强制重载或写入内存</strong></p>
+<h3 id="内核同步方法"><a href="#内核同步方法" class="headerlink" title="内核同步方法"></a>内核同步方法</h3><h4 id="自旋锁"><a href="#自旋锁" class="headerlink" title="自旋锁"></a>自旋锁</h4><p>操作流程通常为：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取失败一直重试</span></span><br><span class="line"><span class="keyword">while</span>(!spin_lock()) &#123; &#125;</span><br><span class="line"><span class="comment">// do something</span></span><br><span class="line"></span><br><span class="line">spin_unlock();</span><br></pre></td></tr></table></figure>
+<p>自旋锁相对于阻塞锁，会跑完时间片，占用额外的CPU时间，但响应会更快，适合加锁时间短的操作。</p>
+<p><strong>自旋锁可以设置读写锁</strong></p>
+<p>读写锁在写锁被占用时，读锁和写锁都不能获取；读锁被占用时，写锁不能获取，读锁可以获取</p>
+<h4 id="信号量"><a href="#信号量" class="headerlink" title="信号量"></a>信号量</h4><p>信号量提供一定数量的临界资源，在临界资源被消耗光时，再尝试获取，将把进程设置为TASK_INTERRUPTIBLE状态。</p>
+<p>在重新存在资源时唤醒。</p>
+<p><strong>信号量可以支持读写</strong></p>
+<p><strong>信号量可以使用trylock自旋</strong></p>
+<h4 id="Mutex"><a href="#Mutex" class="headerlink" title="Mutex"></a>Mutex</h4><p>Mutex相当于上限为1的信号量。</p>
+<h4 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h4><p>rmb()：创建读内存屏障，跨域rmb()的读操作不会发生重排序</p>
+<p>wmb()：写操作不会发生重排序</p>
+<p>mb()：rmb和wmb的组合</p>
+<h2 id="定时器和时间管理"><a href="#定时器和时间管理" class="headerlink" title="定时器和时间管理"></a>定时器和时间管理</h2><p>节拍率：每秒触发时钟中断的次数，x86架构是100</p>
+<p>节拍率高的优势：</p>
+<ol>
+<li>内核定时器更准确</li>
+<li>提高抢占调度的准确性</li>
+<li>资源统计和运行时间统计解析读更高</li>
+</ol>
+<p>劣势：</p>
+<ol>
+<li>会频繁打乱高速缓存，并增加耗电</li>
+</ol>
 
       
     </div>
@@ -668,7 +839,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#进程"><span class="nav-number">1.</span> <span class="nav-text">进程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#进程状态"><span class="nav-number">1.1.</span> <span class="nav-text">进程状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程家族树"><span class="nav-number">1.2.</span> <span class="nav-text">进程家族树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程操作"><span class="nav-number">1.3.</span> <span class="nav-text">进程操作</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建"><span class="nav-number">1.3.1.</span> <span class="nav-text">创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内核进程"><span class="nav-number">1.3.2.</span> <span class="nav-text">内核进程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#进程终结"><span class="nav-number">1.3.3.</span> <span class="nav-text">进程终结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程通信"><span class="nav-number">1.4.</span> <span class="nav-text">进程通信</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#调度"><span class="nav-number">1.5.</span> <span class="nav-text">调度</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#进程"><span class="nav-number">1.</span> <span class="nav-text">进程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#进程状态"><span class="nav-number">1.1.</span> <span class="nav-text">进程状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程家族树"><span class="nav-number">1.2.</span> <span class="nav-text">进程家族树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程操作"><span class="nav-number">1.3.</span> <span class="nav-text">进程操作</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#创建"><span class="nav-number">1.3.1.</span> <span class="nav-text">创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内核进程"><span class="nav-number">1.3.2.</span> <span class="nav-text">内核进程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#进程终结"><span class="nav-number">1.3.3.</span> <span class="nav-text">进程终结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进程通信"><span class="nav-number">1.4.</span> <span class="nav-text">进程通信</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#调度"><span class="nav-number">1.5.</span> <span class="nav-text">调度</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系统调用"><span class="nav-number">2.</span> <span class="nav-text">系统调用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#中断"><span class="nav-number">3.</span> <span class="nav-text">中断</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DMA：直接内存访问"><span class="nav-number">3.1.</span> <span class="nav-text">DMA：直接内存访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#上半部和下半部"><span class="nav-number">3.2.</span> <span class="nav-text">上半部和下半部</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#API"><span class="nav-number">3.3.</span> <span class="nav-text">API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#中断上下文"><span class="nav-number">3.4.</span> <span class="nav-text">中断上下文</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#下半部"><span class="nav-number">3.5.</span> <span class="nav-text">下半部</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tasklet"><span class="nav-number">3.6.</span> <span class="nav-text">tasklet</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#工作队列"><span class="nav-number">3.7.</span> <span class="nav-text">工作队列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内核同步"><span class="nav-number">4.</span> <span class="nav-text">内核同步</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#内核同步方法"><span class="nav-number">4.1.</span> <span class="nav-text">内核同步方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#自旋锁"><span class="nav-number">4.1.1.</span> <span class="nav-text">自旋锁</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#信号量"><span class="nav-number">4.1.2.</span> <span class="nav-text">信号量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Mutex"><span class="nav-number">4.1.3.</span> <span class="nav-text">Mutex</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存屏障"><span class="nav-number">4.1.4.</span> <span class="nav-text">内存屏障</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#定时器和时间管理"><span class="nav-number">5.</span> <span class="nav-text">定时器和时间管理</span></a></li></ol></div>
             
 
           </div>
