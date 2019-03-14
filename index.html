@@ -190,7 +190,7 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="Navigationsleiste an/ausschalten">
+    <button aria-label="Toggle navigation bar">
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
@@ -218,7 +218,7 @@
 
     
 
-    <a href="/blog/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Startseite</a>
+    <a href="/blog/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
 
   </li>
         
@@ -235,7 +235,7 @@
 
     
 
-    <a href="/blog/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archiv</a>
+    <a href="/blog/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
 
   </li>
 
@@ -325,14 +325,14 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Veröffentlicht am</span>
+                <span class="post-meta-item-text">Posted on</span>
               
 
               
                 
               
 
-              <time title="Erstellt: 2019-03-14 14:03:13 / Geändert am: 18:35:31" itemprop="dateCreated datePublished" datetime="2019-03-14T14:03:13+08:00">2019-03-14</time>
+              <time title="Created: 2019-03-14 14:03:13 / Modified: 19:47:31" itemprop="dateCreated datePublished" datetime="2019-03-14T14:03:13+08:00">2019-03-14</time>
             
 
             
@@ -669,6 +669,114 @@
 <ol>
 <li>会频繁打乱高速缓存，并增加耗电</li>
 </ol>
+<h2 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h2><p>内核把物理页作为内存管理的基本单位，32位系统支持4KB的页，64位系统支持8KB的页。</p>
+<p>页的结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">page</span> &#123;</span></span><br><span class="line">    <span class="comment">// 存放页的状态，包括是不是脏的，是否锁定在内存中等</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> flags;</span><br><span class="line">    <span class="comment">// 存放页的引用计数，当计数值变为-1时，就说明内核没有引用该页</span></span><br><span class="line">    <span class="keyword">atomic_t</span> _count;</span><br><span class="line">    <span class="keyword">atomic_t</span> _mapcount;</span><br><span class="line">    <span class="comment">// 作为私有数据</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="keyword">private</span>;</span><br><span class="line">    <span class="comment">// 作为进程页表映射</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">address_space</span> *<span class="title">mapping</span>;</span></span><br><span class="line">    <span class="keyword">pgoff_t</span> index;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">lru</span>;</span></span><br><span class="line">    <span class="comment">// 页的虚拟地址</span></span><br><span class="line">    <span class="keyword">void</span> *<span class="keyword">virtual</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="区"><a href="#区" class="headerlink" title="区"></a>区</h4><p>由于硬件限制，内核并不对多有的页一视同仁</p>
+<p>分类：</p>
+<blockquote>
+<ol>
+<li>ZONE_DMA：包含的页能用来DMA操作</li>
+<li>ZONE_DMA32： 只能被32位设备访问</li>
+<li>ZONE_NORMAL： 能够正常映射的页</li>
+<li>ZONE_HIGNEM：高端内存，不能永久映射到内核空间，x86-64没有高端内存</li>
+</ol>
+</blockquote>
+<h4 id="API-1"><a href="#API-1" class="headerlink" title="API"></a>API</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获得页，分配2^order个连续物理页</span></span><br><span class="line"><span class="function">struct page *<span class="title">alloc_pages</span><span class="params">(<span class="keyword">gfp_t</span> gfp_mast, <span class="keyword">unsigned</span> <span class="keyword">int</span> order)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获得页的逻辑地址</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> * <span class="title">page_address</span><span class="params">(struct page *page)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 与alloc_pages相同，但返回的时第一个逻辑地址，返回的逻辑地址时连续的</span></span><br><span class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> __get_free_pages(<span class="keyword">gfp_t</span> gfp_mask, unsiged <span class="keyword">int</span> order);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 释放页</span></span><br><span class="line"><span class="keyword">void</span> __free_pages(struct page *page, <span class="keyword">unsigned</span> <span class="keyword">int</span> order);</span><br></pre></td></tr></table></figure>
+<p><strong>kmalloc</strong></p>
+<p>可以获得一块内核内存，分配的内存时物理连续的。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">kmalloc</span><span class="params">(<span class="keyword">size_t</span> size, <span class="keyword">gfp_t</span> flags)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">kefree</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span> *ptr)</span></span>;</span><br></pre></td></tr></table></figure>
+<p><strong>vmalloc</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 分配的内存在物理上不一定故事连续的</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">vmalloc</span><span class="params">(unsiged <span class="keyword">long</span> size)</span></span>;</span><br></pre></td></tr></table></figure>
+<h4 id="SLAB"><a href="#SLAB" class="headerlink" title="SLAB"></a>SLAB</h4><p>SLAB由一个或多个物理上连续的页组成，slab有三种状态，满，部分满，空</p>
+<p>slab使用链表存储，使用缓存着色和对象缓存，防止反复申请和释放页。</p>
+<p>缓存着色：防止多个对象映射到相同的高速缓存行，使用的是CPU缓存的选路技术</p>
+<h3 id="在栈上静态分配内存"><a href="#在栈上静态分配内存" class="headerlink" title="在栈上静态分配内存"></a>在栈上静态分配内存</h3><p>用户栈可以预先分配内存，也能动态增加。</p>
+<p>内核栈只有4KB或8KB。</p>
+<h3 id="高端内存映射"><a href="#高端内存映射" class="headerlink" title="高端内存映射"></a>高端内存映射</h3><p>高端内存的页不能永久映射在地址空间上。</p>
+<p>使用高端内存需要创建临时页。</p>
+<h3 id="页表"><a href="#页表" class="headerlink" title="页表"></a>页表</h3><p>页表是物理内存和逻辑页的映射关系，每个进程都有自己的页表。</p>
+<p>二级页表：提供目录项，目录指向后续页表。使用页表目录+偏移来表示具体哪个页。只存储使用的目录。</p>
+<h2 id="虚拟文件系统VFS"><a href="#虚拟文件系统VFS" class="headerlink" title="虚拟文件系统VFS"></a>虚拟文件系统VFS</h2><p>VFS提供标准的文件系统访问接口。</p>
+<p>VFS对象：</p>
+<ol>
+<li>超级块节点：提供已安装的文件系统</li>
+<li>索引节点对象：代表一个具体的文件</li>
+<li>目录项对象：代表一个目录项</li>
+<li>文件对象：代表进程打开的文件</li>
+</ol>
+<p><strong>目录项缓存</strong></p>
+<p>遍历路径名中所有元素并将它们逐个解析成目录对象，时间城北，太大。内核将目录项对象放入缓存中。</p>
+<p>缓存包含：</p>
+<ol>
+<li>被使用的目录项链表</li>
+<li>最近被使用的双向链表</li>
+<li>散列和响应的散列函数快速将给定路径解析为相关目录对象</li>
+</ol>
+<h2 id="块I-O"><a href="#块I-O" class="headerlink" title="块I/O"></a>块I/O</h2><p>块设备：可以随机访问固定大小的设备<br>字符流设备：只能顺序访问的设备</p>
+<p>缓冲区：一个块被调入内存，会先进入缓冲区，包含一个或多个扇区，但不会超过一页</p>
+<p>请求队列：块设备将挂起的请求放入队列中</p>
+<h3 id="调度-1"><a href="#调度-1" class="headerlink" title="调度"></a>调度</h3><p>以硬盘为例，每次寻址时间过长，如果以内核请求次序访问，性能会很差。</p>
+<p>提交前会先进行合并与排序，负责提交的子系统叫做I/O调度程序。</p>
+<p>算法：</p>
+<p><strong>Linus电梯</strong></p>
+<ol>
+<li>有相邻的磁盘操作，则合并</li>
+<li>有驻留时间过长的请求，则把新请求放入队尾，防止饥饿</li>
+<li>以扇区方向为次序排序</li>
+</ol>
+<p><strong>最终期限</strong></p>
+<p>// TODO</p>
+<p><strong>预测I/O调度程序</strong></p>
+<p>// TODO</p>
+<p><strong>完全公正I/O调度</strong></p>
+<p>// TODO</p>
+<p><strong>空操作I/O调度</strong></p>
+<p>// TODO</p>
+<h2 id="进程地址空间"><a href="#进程地址空间" class="headerlink" title="进程地址空间"></a>进程地址空间</h2><p>进程地址空间由可寻址的虚拟内存组成。</p>
+<p>进程只能访问有效的内存区域内的空间，内存区域有<strong>可读，可写，可执行属性</strong></p>
+<p>内存包含各种内存对象，比如：</p>
+<ul>
+<li>可执行文件代码的内存映射</li>
+<li>可执行文件的已初始化全局变量的内存映射</li>
+<li>进程用户空间栈</li>
+<li>动态链接库的共享代码段</li>
+<li>内存映射文件</li>
+<li>共享内存段</li>
+<li>匿名内存映射，如malloc()</li>
+</ul>
+<h3 id="内存描述符"><a href="#内存描述符" class="headerlink" title="内存描述符"></a>内存描述符</h3><p>内存描述符包含可用内存区域链表等等。</p>
+<p>以线程方式clone的对象，不包含单独的内存描述符。</p>
+<p><strong>VMA</strong></p>
+<p>虚拟内存的一些标志</p>
+<p>如：</p>
+<ul>
+<li>VM_READ/VM_WRITE/VW_EXEC/VM_SHARED：可读写执行共享标记</li>
+<li>VM_GROW/VM_DOWN：可增加</li>
+<li>VM_IO：区域映射I/O空间</li>
+</ul>
+<h3 id="mmap"><a href="#mmap" class="headerlink" title="mmap"></a>mmap</h3><p>mmap()和do_mmap用来创建线性地址空间，并映射到页上，用于文件和内存的共享（子进程）。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">do_mmap</span><span class="params">(struct file *file, unsiged <span class="keyword">long</span> addr,</span></span></span><br><span class="line"><span class="function"><span class="params">                    <span class="keyword">unsigned</span> <span class="keyword">long</span> len, <span class="keyword">unsigned</span> <span class="keyword">long</span> prot,</span></span></span><br><span class="line"><span class="function"><span class="params">                    <span class="keyword">unsigned</span> <span class="keyword">long</span> flag, <span class="keyword">unsigned</span> <span class="keyword">long</span> offset)</span></span></span><br></pre></td></tr></table></figure>
+<p>mummap()和do_mummap：删除地址区间</p>
+<h2 id="页高速缓存"><a href="#页高速缓存" class="headerlink" title="页高速缓存"></a>页高速缓存</h2><p>写缓存：程序执行写时先写到缓存，并通过一定策略写入磁盘</p>
+<p>读缓存：读取文件时，先从页上查找</p>
+<p>缓存回收：</p>
+<ul>
+<li>LRU</li>
+<li>双链策略：维护一个活跃链表和一个不活跃的，非活跃的链表可以被换出，又叫做LR/2</li>
+</ul>
+<p>flusher线程</p>
+<p>写入磁盘的时机</p>
+<ol>
+<li>空间内存低于一定阈值，写入磁盘，并回收页</li>
+<li>脏页驻留时间操作一定阈值</li>
+<li>sync()和fsync()调用时</li>
+</ol>
+<h2 id="推荐书籍"><a href="#推荐书籍" class="headerlink" title="推荐书籍"></a>推荐书籍</h2><ol>
+<li>Linux内核设计</li>
+<li>操作系统精髓与设计原理</li>
+<li>深入Linux内核架构</li>
+</ol>
 
           
         
@@ -763,14 +871,14 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Veröffentlicht am</span>
+                <span class="post-meta-item-text">Posted on</span>
               
 
               
                 
               
 
-              <time title="Erstellt: 2019-03-14 09:25:57 / Geändert am: 09:50:15" itemprop="dateCreated datePublished" datetime="2019-03-14T09:25:57+08:00">2019-03-14</time>
+              <time title="Created: 2019-03-14 09:25:57 / Modified: 09:50:15" itemprop="dateCreated datePublished" datetime="2019-03-14T09:25:57+08:00">2019-03-14</time>
             
 
             
@@ -962,7 +1070,7 @@
                   <a href="/blog/archives/">
                 
                     <span class="site-state-item-count">2</span>
-                    <span class="site-state-item-name">Artikel</span>
+                    <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
               
@@ -981,7 +1089,7 @@
                       
                     
                     <span class="site-state-item-count">2</span>
-                    <span class="site-state-item-name">schlagwörter</span>
+                    <span class="site-state-item-name">tags</span>
                   
                 </div>
               
@@ -1034,7 +1142,7 @@
 </div>
 
 
-  <div class="powered-by">Erstellt mit  <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
 
 
 
@@ -1042,7 +1150,7 @@
 
 
 
-  <div class="theme-info">Design – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.0.1</div>
+  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.0.1</div>
 
 
 
