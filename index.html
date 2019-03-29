@@ -190,7 +190,7 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="Toggle navigation bar">
+    <button aria-label="Navigationsleiste an/ausschalten">
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
@@ -218,7 +218,7 @@
 
     
 
-    <a href="/blog/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+    <a href="/blog/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Startseite</a>
 
   </li>
         
@@ -235,7 +235,7 @@
 
     
 
-    <a href="/blog/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives</a>
+    <a href="/blog/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archiv</a>
 
   </li>
 
@@ -271,6 +271,309 @@
           <div id="content" class="content">
             
   <section id="posts" class="posts-expand">
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://guanjiexu.github.io/blog/blog/2019/03/29/Java高级工程师/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="徐冠杰">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="徐冠杰的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/blog/2019/03/29/Java高级工程师/" class="post-title-link" itemprop="url">Java高级工程师</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2019-03-29 21:41:57 / Geändert am: 22:27:23" itemprop="dateCreated datePublished" datetime="2019-03-29T21:41:57+08:00">2019-03-29</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>Java高级工程师中，面试中的常考点，以及工作所需技能。</p>
+<p>技能等级：</p>
+<ul>
+<li>了解：知道基本的概念，并能快速搭建一些脚手架</li>
+<li>熟悉：能够快速使用该工具，清楚其中的常见坑点</li>
+<li>精通：熟悉其源码，能够进行二次开发和优化</li>
+</ul>
+<h2 id="工作必备"><a href="#工作必备" class="headerlink" title="工作必备"></a>工作必备</h2><h3 id="1-架构方式（微服务）"><a href="#1-架构方式（微服务）" class="headerlink" title="1. 架构方式（微服务）"></a>1. 架构方式（微服务）</h3><p>针对互联网应用，性能要求不高。</p>
+<p>技术选型：</p>
+<ol>
+<li>服务间通信<ul>
+<li>RPC，可选用GRPC</li>
+<li>注册中心，可参考Eureka，Dubbo</li>
+<li>熔断</li>
+<li>动态伸缩（可选，参考K8S）</li>
+<li>限流</li>
+<li>网关：用来做权限管理，路由分配</li>
+<li>配置中心：推荐Apollo</li>
+</ul>
+</li>
+<li><p>缓存</p>
+<ul>
+<li>采用Redis-Cluster</li>
+</ul>
+</li>
+<li><p>分布式锁</p>
+<ul>
+<li>采用Redlock或zookeeper</li>
+</ul>
+</li>
+<li><p>数据落地</p>
+<ul>
+<li>PGSQL/MySQL配合MyBatis</li>
+<li>ShardingJDBC（大的数据分片）</li>
+<li>HBASE（超大规模的简单数据的存储和查询）</li>
+</ul>
+</li>
+<li>消息队列<ul>
+<li>RabbitMQ/RocketMQ：耗时业务的调用，消峰</li>
+<li>Kafka：用于简单的日志推送</li>
+</ul>
+</li>
+<li>分布式事务<ul>
+<li>由于微服务拆分，分布式事务很重要</li>
+</ul>
+</li>
+<li>日志与统计</li>
+</ol>
+<p>架构图与实施方案（doing…）</p>
+<h2 id="面试常见问题大纲"><a href="#面试常见问题大纲" class="headerlink" title="面试常见问题大纲"></a>面试常见问题大纲</h2><ol>
+<li><p>理论基础</p>
+<ul>
+<li><p>算法</p>
+<ul>
+<li><p>了解：B/B+树，堆排序，快速排序，跳表，HashMap，堆，队列，一致性Hash，二分查找，红黑树</p>
+<blockquote>
+<p>QA</p>
+<ol>
+<li>B/B+树的区别</li>
+<li>为什么数据库系统不选择红黑树，而选择B/B+树</li>
+<li>写一个堆排序</li>
+<li>写一个快速排序</li>
+<li>Redis中跳表的实现</li>
+<li>HashMap中碰撞了怎么办</li>
+<li>Hash算法，为什么Map容量设计为2的n次方</li>
+<li>解释一下一致性Hash，虚拟节点，一个节点当掉，会产生多少数据迁移</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>操作系统</p>
+<ul>
+<li><p>了解：进程/线程/协程，虚拟内存，TCP协议，中断，I/O，CPU缓存</p>
+<blockquote>
+<p>QA</p>
+<ol>
+<li>Linux中进程和线程有什么区别</li>
+<li>解释下vfork,fork的流程</li>
+<li>Linux中进程的调度方式</li>
+<li>解释下页表，为什么使用页表，fork后进程的页表发生了什么变化</li>
+<li>协程和线程的性能差在什么地方（上下文切换，重载页表项，刷新页表缓存，寄存器重新加载内存，线程内存分配，线程有分时调度，协程不强制）</li>
+<li>TCP为什么是3次握手不是2次，为什么是4次挥手，TIME_WAIT为什么是2MSL，解释下nigle算法，快速重传，快速恢复，解释下backlog，如果取消TIME_WAIT（两边同时关闭）</li>
+<li>CPU缓存一致性协议，内存屏障，命中率对性能的影响，缓存着色，缓存行</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><p>分布式</p>
+<ul>
+<li>了解：2PC/3PC，Raft/Paxos，负载均衡的算法与实现（session sticky），熔断，RPC</li>
+<li>了解：zookeeper</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Java基础</p>
+<ul>
+<li>集合：熟悉，着重考察HashMap/HashTable/ConcurrentHashMap（如何扩容，线程安全，发生碰撞了怎么办）</li>
+<li>NIO：了解，Select/Epoll/Poll区别，动手写NIO处理网络请求</li>
+<li>线程池：熟悉，实现原理，几种产生方法</li>
+<li>JVM：了解，内存区域，类加载器（双亲委派），回收算法，垃圾回收器（CMS/G1）</li>
+<li>反射</li>
+<li>多线程：violate，线程池，ThreadLocal(内存泄漏，弱引用)，AQS，CyclicBarrir/CountDownLatch，ReentrantLock</li>
+</ul>
+</li>
+<li><p>SQL</p>
+<ul>
+<li>事务（熟悉）：隔离级别，MVCC</li>
+<li>锁（了解）：for update，lock</li>
+<li>索引（熟悉）：分布式自增，聚集索引，最左原则，Explain</li>
+<li>MyBatis（熟悉）：二级索引，一级索引，如何join</li>
+<li>分库分表（了解）</li>
+<li>高可用（了解）：读写分离，双主（keepalive）</li>
+</ul>
+</li>
+<li><p>Redis</p>
+<ul>
+<li>熟悉：数据结构及实现，淘汰策略，AOF/RDB，事务</li>
+<li>了解：哨兵模式，集群模式</li>
+<li>熟悉：用作缓存，防止雪崩，预热</li>
+<li>了解：Lua脚本</li>
+<li>了解：分布式锁</li>
+</ul>
+</li>
+<li><p>消息队列</p>
+<ul>
+<li>消息队列比较</li>
+<li>如果处理重复（幂等）</li>
+<li>保证数据不丢：事务，ACK，持久化</li>
+<li>消息队列作用：解耦，消峰</li>
+<li>高可用搭建</li>
+</ul>
+</li>
+<li><p>大数据处理（加分）</p>
+<ul>
+<li>hadoop</li>
+<li>hbase（重点）</li>
+<li>spark</li>
+<li>hive</li>
+</ul>
+</li>
+<li><p>虚拟化</p>
+<ul>
+<li><p>熟悉：Docker/DockerCompose</p>
+</li>
+<li><p>了解：K8S（加分）</p>
+</li>
+</ul>
+</li>
+<li><p>Spring</p>
+<ul>
+<li>Bean加载流程</li>
+<li>事务传播</li>
+<li>AOP实现原理</li>
+<li>CGLIB</li>
+<li>SpringMVC处理步骤</li>
+</ul>
+</li>
+</ol>
+
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
     
       
 
@@ -325,14 +628,14 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Posted on</span>
+                <span class="post-meta-item-text">Veröffentlicht am</span>
               
 
               
                 
               
 
-              <time title="Created: 2019-03-14 14:03:13 / Modified: 19:51:00" itemprop="dateCreated datePublished" datetime="2019-03-14T14:03:13+08:00">2019-03-14</time>
+              <time title="Erstellt: 2019-03-14 14:03:13 / Geändert am: 19:51:59" itemprop="dateCreated datePublished" datetime="2019-03-14T14:03:13+08:00">2019-03-14</time>
             
 
             
@@ -871,19 +1174,31 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">Posted on</span>
+                <span class="post-meta-item-text">Veröffentlicht am</span>
               
 
               
                 
               
 
-              <time title="Created: 2019-03-14 09:25:57 / Modified: 09:50:15" itemprop="dateCreated datePublished" datetime="2019-03-14T09:25:57+08:00">2019-03-14</time>
+              <time title="Erstellt: 2019-03-14 09:25:57" itemprop="dateCreated datePublished" datetime="2019-03-14T09:25:57+08:00">2019-03-14</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Bearbeitet am</span>
+                
+                <time title="Geändert am: 2019-03-21 19:24:11" itemprop="dateModified" datetime="2019-03-21T19:24:11+08:00">2019-03-21</time>
               
             
           </span>
@@ -919,8 +1234,7 @@
       
         
           
-            <p>经历了阿里等一系列大厂的面试，从技术上来说，高级工程师这个层级在技术上不是很难。</p>
-<p>第一知识面要广，第二用到的东西不仅要会用，并且知道其原理。除了MySQL这种大型应用系统外，自己使用过的东西，要达到，给你足够的时间，不参考其它设计案，你能够独立实现的程度。</p>
+            <p>Java高级工程师面试要点，其中列举的项需要达到理解程度。</p>
 <p>这篇文章列举了Java高级工程师所需要的技能（不包含大数据处理），供大家参考（后面列举项时面试常考点）</p>
 <ol>
 <li><p>计算机基础</p>
@@ -1069,8 +1383,8 @@
                 
                   <a href="/blog/archives/">
                 
-                    <span class="site-state-item-count">2</span>
-                    <span class="site-state-item-name">posts</span>
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">Artikel</span>
                   </a>
                 </div>
               
@@ -1088,8 +1402,10 @@
                     
                       
                     
-                    <span class="site-state-item-count">2</span>
-                    <span class="site-state-item-name">tags</span>
+                      
+                    
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">schlagwörter</span>
                   
                 </div>
               
@@ -1142,7 +1458,7 @@
 </div>
 
 
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
+  <div class="powered-by">Erstellt mit  <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
 
 
 
@@ -1150,7 +1466,7 @@
 
 
 
-  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.0.1</div>
+  <div class="theme-info">Design – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.0.1</div>
 
 
 
